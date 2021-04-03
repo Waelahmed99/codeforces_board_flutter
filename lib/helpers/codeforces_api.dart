@@ -18,10 +18,10 @@ void getProblems() async {
     debugPrint('Failed to load assets/problems.txt');
 }
 
-void setProblemVerdict(String problem, String handle) async {
-  int contestId = int.parse(problem.substring(0, problem.length - 1));
-  String index = problem[problem.length - 1];
-  print('$contestId   $index');
+void setProblemVerdict(String handle) async {
+  // int contestId = int.parse(problem.substring(0, problem.length - 1));
+  // String index = problem[problem.length - 1];
+  // print('$contestId   $index');
   try {
     http.Response response = await http.get(
         Uri.https('codeforces.com', '/api/user.status', {'handle': handle}));

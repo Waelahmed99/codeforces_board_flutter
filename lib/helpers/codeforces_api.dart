@@ -7,15 +7,11 @@ import 'package:http/http.dart' as http;
 
 class CfApi {
   List<String> problems;
-  Map<String, Verdict> status;
+  Map<String, Problem> userSubmissions;
 
   CfApi() {
     problems = [];
-    status = {};
-  }
-
-  void bla() {
-    print(problems.length);
+    userSubmissions = {};
   }
 
   Future<void> getProblems() async {
@@ -39,11 +35,11 @@ class CfApi {
       if (result['status'] != 'OK') return; // todo: handle errors.
       List<dynamic> problems = result['result'];
 
-      status = {};
+      userSubmissions = {};
       problems.forEach((element) {
         Problem problem = Problem(element);
         String problemId = problem.contestId.toString() + problem.index;
-        status[problemId] = problem.verdict;
+        userSubmissions[problemId] = problem;
       });
     } catch (e) {
       print(e);

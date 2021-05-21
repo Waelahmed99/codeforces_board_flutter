@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'helpers/codeforces_api.dart' as cf;
+import 'package:scoreboard/models/problem.dart';
+import 'helpers/codeforces_api.dart';
 import 'dart:html';
+import 'dart:js' as js;
 
 void main() {
-  cf.getProblems();
   WidgetsFlutterBinding.ensureInitialized();
   runApp(AppRoot());
 }
@@ -35,6 +36,7 @@ class UserDetails extends StatefulWidget {
 
 class _UserDetailsState extends State<UserDetails> {
   bool _isLoading;
+  CfApi cf;
 
   set isLoading(bool value) => setState(() => _isLoading = value);
 
@@ -44,14 +46,20 @@ class _UserDetailsState extends State<UserDetails> {
   void initState() {
     super.initState();
     _isLoading = true;
+    cf = CfApi();
   }
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      cf.getProblems();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      if (isLoading) {
+        await cf.getProblems();
+        await cf.setProblemVerdict(widget.handle);
+        isLoading = false;
+      }
     });
 
+    // No handle is passed.
     if (widget.handle == null || widget.handle.isEmpty)
       return Center(
         child: Text(
@@ -60,6 +68,7 @@ class _UserDetailsState extends State<UserDetails> {
         ),
       );
 
+    // Problems are still loading.
     if (isLoading)
       return Container(
         width: MediaQuery.of(context).size.width,
@@ -74,6 +83,60 @@ class _UserDetailsState extends State<UserDetails> {
           ],
         ),
       );
+
+    // Done loading problems.
+    return SingleChildScrollView(
+      child: Container(
+        color: Colors.white,
+        padding: EdgeInsets.all(20.0),
+        child: Table(
+            border: TableBorder(
+              verticalInside: BorderSide(
+                  width: 1, color: Colors.blue, style: BorderStyle.solid),
+              horizontalInside: BorderSide(
+                  width: 1, color: Colors.blue, style: BorderStyle.solid),
+            ),
+            children: cf.problems.map((e) {
+              List<String> sep = e.split(' ');
+              String problemId = sep[0];
+              String problemName = "";
+              for (int i = 1; i < sep.length; i++) problemName += sep[i] + ' ';
+              Problem problem = cf.userSubmissions[problemId];
+              Verdict result = problem?.verdict;
+              if (result == null) result = Verdict.NOT_SOLVED;
+              //     return GestureDetector(
+              //       onTap: () => js.context.callMethod('open', [
+              //         'https://codeforces.com/problemset/problem/${problemId.substring(0, problemId.length - 1)}/${problemId[problemId.length - 1]}'
+              //       ]),
+              //       child: Container(
+              //         child: Text('$problemName  $result'),
+              //       ),
+              return TableRow(
+                children: [
+                  GestureDetector(
+                    onTap: () => js.context.callMethod('open', [
+                      'https://codeforces.com/problemset/problem/${problemId.substring(0, problemId.length - 1)}/${problemId[problemId.length - 1]}'
+                    ]),
+                    child: Container(
+                      margin: EdgeInsets.all(8),
+                      child: Text(
+                        problemName,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    margin: EdgeInsets.all(8),
+                    child: Text(
+                      result.toString(),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              );
+            }).toList()),
+      ),
+    );
   }
 }
 
